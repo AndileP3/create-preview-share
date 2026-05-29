@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TicketAI — Smart Classification Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0d14;
+  --bg2: #0f1420;
+  --bg3: #151b2e;
+  --bg4: #1c2438;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8ecf4;
+  --text2: #8892a4;
+  --text3: #555f72;
+  --accent: #3b82f6;
+  --accent2: #1d4ed8;
+  --accent-glow: rgba(59,130,246,0.15);
+  --hr: #ec4899;
+  --it: #3b82f6;
+  --fin: #10b981;
+  --ops: #f59e0b;
+  --hr-bg: rgba(236,72,153,0.1);
+  --it-bg: rgba(59,130,246,0.1);
+  --fin-bg: rgba(16,185,129,0.1);
+  --ops-bg: rgba(245,158,11,0.1);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  overflow-x: hidden;
+}
+
+/* ─── Sidebar ─── */
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-icon {
+  width: 34px; height: 34px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.logo-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 60%);
+}
+.logo-text { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.logo-text span { color: var(--accent); }
+.logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 500; }
+
+.sidebar-nav { padding: 16px 12px; flex: 1; }
+.nav-section-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text3); padding: 0 8px; margin-bottom: 6px; margin-top: 16px;
+}
+.nav-section-label:first-child { margin-top: 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 8px; cursor: pointer;
+  font-size: 13.5px; color: var(--text2); font-weight: 400;
+  transition: all 0.15s; border: 1px solid transparent; margin-bottom: 1px;
+  user-select: none;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active {
+  background: var(--accent-glow); color: var(--accent);
+  border-color: rgba(59,130,246,0.2);
+}
+.nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--bg4); color: var(--text2);
+  font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 20px;
+  font-family: var(--mono); min-width: 22px; text-align: center;
+}
+.nav-badge.live {
+  background: var(--accent-glow); color: var(--accent);
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+@keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+.sidebar-footer {
+  padding: 16px 12px;
+  border-top: 1px solid var(--border);
+}
+.user-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px;
+  cursor: pointer; transition: background 0.15s;
+}
+.user-row:hover { background: var(--bg3); }
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.user-name { font-size: 13px; font-weight: 500; }
+.user-role { font-size: 11px; color: var(--text3); }
+
+/* ─── Main ─── */
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ─── Topbar ─── */
+.topbar {
+  height: 60px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 28px;
+  background: var(--bg); gap: 16px; position: sticky; top: 0; z-index: 50;
+}
+.topbar-title { font-size: 15px; font-weight: 500; }
+.topbar-sep { color: var(--text3); }
+.topbar-sub { font-size: 13px; color: var(--text2); }
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.topbar-btn {
+  padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: var(--font); transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+}
+.topbar-btn.ghost {
+  background: transparent; color: var(--text2); border: 1px solid var(--border2);
+}
+.topbar-btn.ghost:hover { background: var(--bg3); color: var(--text); }
+.topbar-btn.primary {
+  background: var(--accent); color: #fff; border: 1px solid transparent;
+}
+.topbar-btn.primary:hover { background: #2563eb; }
+
+/* ─── Content ─── */
+.content { padding: 28px; flex: 1; }
+
+/* ─── Stats row ─── */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px 20px;
+  position: relative; overflow: hidden; transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: var(--border2); }
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.stat-card.hr::before { background: var(--hr); }
+.stat-card.it::before { background: var(--it); }
+.stat-card.fin::before { background: var(--fin); }
+.stat-card.ops::before { background: var(--ops); }
+.stat-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+}
+.stat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.stat-dot.hr { background: var(--hr); }
+.stat-dot.it { background: var(--it); }
+.stat-dot.fin { background: var(--fin); }
+.stat-dot.ops { background: var(--ops); }
+.stat-value { font-size: 28px; font-weight: 300; letter-spacing: -1px; font-family: var(--mono); }
+.stat-delta { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ─── Layout grid ─── */
+.workspace { display: grid; grid-template-columns: 420px 1fr; gap: 20px; align-items: start; }
+
+/* ─── Form panel ─── */
+.panel {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.panel-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.panel-title { font-size: 13.5px; font-weight: 600; }
+.panel-sub { font-size: 12px; color: var(--text3); margin-left: auto; }
+.panel-body { padding: 20px; }
+
+.form-field { margin-bottom: 16px; }
+.form-field:last-child { margin-bottom: 0; }
+.field-label {
+  display: block; font-size: 11.5px; font-weight: 600; letter-spacing: 0.5px;
+  text-transform: uppercase; color: var(--text2); margin-bottom: 7px;
+}
+.field-input {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 10px 14px; font-family: var(--font);
+  font-size: 14px; color: var(--text); outline: none; transition: all 0.15s;
+}
+.field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.field-input::placeholder { color: var(--text3); }
+textarea.field-input { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.priority-row { display: flex; gap: 8px; }
+.priority-btn {
+  flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border2);
+  background: var(--bg3); color: var(--text2); font-size: 12px; font-weight: 500;
+  cursor: pointer; font-family: var(--font); text-align: center; transition: all 0.15s;
+}
+.priority-btn:hover { border-color: var(--border); color: var(--text); }
+.priority-btn.selected.low { border-color: var(--fin); color: var(--fin); background: rgba(16,185,129,0.08); }
+.priority-btn.selected.medium { border-color: var(--ops); color: var(--ops); background: rgba(245,158,11,0.08); }
+.priority-btn.selected.high { border-color: var(--hr); color: var(--hr); background: rgba(236,72,153,0.08); }
+
+.submit-row { display: flex; gap: 10px; margin-top: 4px; }
+.btn {
+  padding: 10px 18px; border-radius: var(--radius); font-size: 13.5px; font-weight: 500;
+  cursor: pointer; font-family: var(--font); transition: all 0.15s; display: flex;
+  align-items: center; gap: 7px; border: 1px solid transparent;
+}
+.btn-primary { background: var(--accent); color: #fff; flex: 1; justify-content: center; }
+.btn-primary:hover:not(:disabled) { background: #2563eb; }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-ghost { background: transparent; color: var(--text2); border-color: var(--border2); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+/* ─── Ticket list panel ─── */
+.filter-tabs {
+  display: flex; gap: 4px; padding: 12px 16px; border-bottom: 1px solid var(--border);
+}
+.filter-tab {
+  padding: 5px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; color: var(--text3); border: 1px solid transparent;
+  transition: all 0.15s; display: flex; align-items: center; gap: 5px; user-select: none;
+}
+.filter-tab:hover { color: var(--text2); background: var(--bg3); }
+.filter-tab.active { color: var(--text); background: var(--bg3); border-color: var(--border2); }
+.tab-count {
+  font-size: 10.5px; font-family: var(--mono); background: var(--bg4);
+  padding: 1px 6px; border-radius: 20px; color: var(--text3);
+}
+.filter-tab.active .tab-count { color: var(--text2); }
+
+.ticket-list { max-height: 600px; overflow-y: auto; }
+.ticket-list::-webkit-scrollbar { width: 4px; }
+.ticket-list::-webkit-scrollbar-track { background: transparent; }
+.ticket-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.ticket-item {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.12s;
+  animation: slide-in 0.3s ease;
+}
+@keyframes slide-in { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform:none; } }
+.ticket-item:hover { background: var(--bg3); }
+.ticket-item:last-child { border-bottom: none; }
+.ticket-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.ticket-item-left { flex: 1; min-width: 0; }
+.ticket-item-title { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticket-item-meta { font-size: 11.5px; color: var(--text3); margin-top: 3px; display: flex; align-items: center; gap: 8px; }
+.ticket-item-meta span { display: flex; align-items: center; gap: 3px; }
+.ticket-desc { font-size: 12.5px; color: var(--text2); line-height: 1.55; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+.category-tag {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 6px; white-space: nowrap; flex-shrink: 0;
+}
+.category-tag.HR { background: var(--hr-bg); color: var(--hr); }
+.category-tag.IT { background: var(--it-bg); color: var(--it); }
+.category-tag.Finance { background: var(--fin-bg); color: var(--fin); }
+.category-tag.Operations { background: var(--ops-bg); color: var(--ops); }
+.category-tag.pending { background: var(--bg4); color: var(--text3); }
+
+.priority-pip {
+  width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+}
+.priority-pip.low { background: var(--fin); }
+.priority-pip.medium { background: var(--ops); }
+.priority-pip.high { background: var(--hr); }
+
+.confidence-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.confidence-bar-track { flex: 1; height: 3px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+.confidence-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+.confidence-bar-fill.HR { background: var(--hr); }
+.confidence-bar-fill.IT { background: var(--it); }
+.confidence-bar-fill.Finance { background: var(--fin); }
+.confidence-bar-fill.Operations { background: var(--ops); }
+.confidence-pct { font-size: 11px; color: var(--text3); font-family: var(--mono); min-width: 30px; text-align: right; }
+
+.reason-chip {
+  margin-top: 8px; padding: 7px 10px; background: var(--bg3); border-radius: 7px;
+  border-left: 2px solid var(--border2); font-size: 11.5px; color: var(--text2); line-height: 1.5;
+  display: flex; align-items: flex-start; gap: 6px;
+}
+.reason-icon { color: var(--text3); flex-shrink: 0; margin-top: 1px; }
+
+.empty-state { padding: 48px 20px; text-align: center; }
+.empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.3; }
+.empty-title { font-size: 14px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+.empty-text { font-size: 12.5px; color: var(--text3); line-height: 1.6; }
+
+/* ─── Thinking animation ─── */
+.thinking-dots { display: inline-flex; gap: 3px; align-items: center; vertical-align: middle; }
+.thinking-dots span {
+  width: 4px; height: 4px; border-radius: 50%; background: var(--text3);
+  animation: dot-blink 1.2s infinite;
+}
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot-blink { 0%,80%,100%{opacity:0.15} 40%{opacity:1} }
+
+/* ─── Toast ─── */
+.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast {
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  font-size: 13px; pointer-events: all; min-width: 280px;
+  animation: toast-in 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+@keyframes toast-in { from { opacity:0; transform: translateX(20px) scale(0.95); } to { opacity:1; transform:none; } }
+.toast.fade-out { animation: toast-out 0.25s ease forwards; }
+@keyframes toast-out { to { opacity:0; transform: translateX(20px); } }
+.toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.toast-text { flex: 1; }
+.toast-label { font-weight: 600; margin-bottom: 1px; }
+.toast-sub { font-size: 11.5px; color: var(--text2); }
+
+/* ─── Search bar ─── */
+.search-wrap { position: relative; }
+.search-input {
+  width: 200px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 12px 7px 32px; font-size: 13px;
+  color: var(--text); font-family: var(--font); outline: none; transition: all 0.15s;
+}
+.search-input:focus { border-color: var(--accent); width: 240px; }
+.search-input::placeholder { color: var(--text3); }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 14px; pointer-events: none; }
+
+/* ─── Scrollable list highlight ─── */
+.ticket-item.new-ticket { animation: highlight-new 1.5s ease; }
+@keyframes highlight-new {
+  0% { background: rgba(59,130,246,0.08); }
+  100% { background: transparent; }
+}
+
+/* ─── Status indicator ─── */
+.status-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text3); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--fin); }
+.status-dot.active { animation: status-pulse 2s ease-in-out infinite; }
+@keyframes status-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+/* ─── Donut mini chart ─── */
+.donut-wrap { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-top: 1px solid var(--border); }
+.donut-legend { display: flex; flex-direction: column; gap: 6px; }
+.legend-row { display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-name { color: var(--text2); flex: 1; }
+.legend-val { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+/* ─── Section header ─── */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-size: 12.5px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text3); }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">Ticket<span>AI</span></div>
+        <div class="logo-sub">Sprint 1 · v1.0</div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Workspace</div>
+    <div class="nav-item active">
+      <span class="nav-icon">⊞</span> Dashboard
+      <span class="nav-badge live" id="liveCount">0</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">◎</span> All Tickets
+      <span class="nav-badge" id="sideAllCount">0</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">◈</span> Analytics
+    </div>
+
+    <div class="nav-section-label">Categories</div>
+    <div class="nav-item" onclick="setFilter('HR')">
+      <span class="nav-icon" style="color:var(--hr)">●</span> HR
+      <span class="nav-badge" id="sideHR">0</span>
+    </div>
+    <div class="nav-item" onclick="setFilter('IT')">
+      <span class="nav-icon" style="color:var(--it)">●</span> IT
+      <span class="nav-badge" id="sideIT">0</span>
+    </div>
+    <div class="nav-item" onclick="setFilter('Finance')">
+      <span class="nav-icon" style="color:var(--fin)">●</span> Finance
+      <span class="nav-badge" id="sideFin">0</span>
+    </div>
+    <div class="nav-item" onclick="setFilter('Operations')">
+      <span class="nav-icon" style="color:var(--ops)">●</span> Operations
+      <span class="nav-badge" id="sideOps">0</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="status-indicator" style="margin-bottom:6px;">
+      <div class="status-dot active"></div> Groq · llama-3.3-70b
+    </div>
+    <div style="font-size:11px;color:var(--text3);padding:0 10px 8px;cursor:pointer;" onclick="resetApiKey()">⟳ Reset Groq API key</div>
+    <div class="user-row">
+      <div class="user-avatar">AI</div>
+      <div>
+        <div class="user-name">AI Intern</div>
+        <div class="user-role">Sprint 1 Candidate</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <header class="topbar">
+    <span class="topbar-title">Dashboard</span>
+    <span class="topbar-sep">/</span>
+    <span class="topbar-sub">Ticket Classification Engine</span>
+    <div class="topbar-actions">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" type="text" placeholder="Search tickets…" id="searchInput" oninput="handleSearch(this.value)"/>
+      </div>
+      <button class="topbar-btn ghost" onclick="exportTickets()">↓ Export</button>
+      <button class="topbar-btn primary" onclick="focusForm()">+ New Ticket</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card hr">
+        <div class="stat-label"><span class="stat-dot hr"></span>Human Resources</div>
+        <div class="stat-value" id="statHR">0</div>
+        <div class="stat-delta" id="deltaHR">No tickets yet</div>
+      </div>
+      <div class="stat-card it">
+        <div class="stat-label"><span class="stat-dot it"></span>Information Technology</div>
+        <div class="stat-value" id="statIT">0</div>
+        <div class="stat-delta" id="deltaIT">No tickets yet</div>
+      </div>
+      <div class="stat-card fin">
+        <div class="stat-label"><span class="stat-dot fin"></span>Finance</div>
+        <div class="stat-value" id="statFin">0</div>
+        <div class="stat-delta" id="deltaFin">No tickets yet</div>
+      </div>
+      <div class="stat-card ops">
+        <div class="stat-label"><span class="stat-dot ops"></span>Operations</div>
+        <div class="stat-value" id="statOps">0</div>
+        <div class="stat-delta" id="deltaOps">No tickets yet</div>
+      </div>
+    </div>
+
+    <!-- Workspace -->
+    <div class="workspace">
+      <!-- Submit form -->
+      <div class="panel" id="formPanel">
+        <div class="panel-header">
+          <span style="font-size:15px;">✦</span>
+          <span class="panel-title">New Ticket</span>
+          <span class="panel-sub" id="formStatus"></span>
+        </div>
+        <div class="panel-body">
+          <div class="form-field">
+            <label class="field-label">Ticket Title *</label>
+            <input class="field-input" id="fTitle" type="text" placeholder="Summarise the issue in one line…"/>
+          </div>
+          <div class="form-field">
+            <label class="field-label">Description *</label>
+            <textarea class="field-input" id="fDesc" placeholder="Provide full context — the AI reads this to classify the ticket accurately…"></textarea>
+          </div>
+          <div class="form-field field-row">
+            <div>
+              <label class="field-label">Submitted by</label>
+              <input class="field-input" id="fName" type="text" placeholder="Name or ID"/>
+            </div>
+            <div>
+              <label class="field-label">Department</label>
+              <input class="field-input" id="fDept" type="text" placeholder="e.g. Sales, Eng…"/>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="field-label">Priority</label>
+            <div class="priority-row">
+              <button class="priority-btn low selected" onclick="setPriority('low', this)">↓ Low</button>
+              <button class="priority-btn medium" onclick="setPriority('medium', this)">→ Medium</button>
+              <button class="priority-btn high" onclick="setPriority('high', this)">↑ High</button>
+            </div>
+          </div>
+          <div class="submit-row" style="margin-top:20px;">
+            <button class="btn btn-primary" id="submitBtn" onclick="submitTicket()">
+              <span id="btnIcon">⚡</span> <span id="btnText">Classify &amp; Submit</span>
+            </button>
+            <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
+          </div>
+        </div>
+        <!-- Mini donut chart area -->
+        <div class="donut-wrap" id="donutWrap" style="display:none">
+          <svg width="64" height="64" viewBox="0 0 64 64" id="donutSvg" style="flex-shrink:0;transform:rotate(-90deg)"></svg>
+          <div class="donut-legend" id="donutLegend"></div>
+        </div>
+      </div>
+
+      <!-- Ticket queue -->
+      <div class="panel">
+        <div class="panel-header">
+          <span style="font-size:15px;">≡</span>
+          <span class="panel-title">Ticket Queue</span>
+          <span class="panel-sub" id="queueMeta">0 tickets</span>
+        </div>
+        <div class="filter-tabs">
+          <div class="filter-tab active" onclick="setFilter('all', this)">
+            All <span class="tab-count" id="tabAll">0</span>
+          </div>
+          <div class="filter-tab" onclick="setFilter('HR', this)">
+            HR <span class="tab-count" id="tabHR">0</span>
+          </div>
+          <div class="filter-tab" onclick="setFilter('IT', this)">
+            IT <span class="tab-count" id="tabIT">0</span>
+          </div>
+          <div class="filter-tab" onclick="setFilter('Finance', this)">
+            Finance <span class="tab-count" id="tabFin">0</span>
+          </div>
+          <div class="filter-tab" onclick="setFilter('Operations', this)">
+            Ops <span class="tab-count" id="tabOps">0</span>
+          </div>
+        </div>
+        <div class="ticket-list" id="ticketList">
+          <div class="empty-state">
+            <div class="empty-icon">◎</div>
+            <div class="empty-title">No tickets yet</div>
+            <div class="empty-text">Submit a request using the form —<br/>the AI will classify it automatically.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+let tickets = [];
+let counter = 1000;
+let activeFilter = 'all';
+let priority = 'low';
+let searchQuery = '';
+
+const CAT_COLORS = {
+  HR: 'var(--hr)', IT: 'var(--it)', Finance: 'var(--fin)', Operations: 'var(--ops)'
+};
+
+function setPriority(p, btn) {
+  priority = p;
+  document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('selected', 'low', 'medium', 'high'));
+  btn.classList.add('selected', p);
+}
+
+function focusForm() {
+  document.getElementById('fTitle').focus();
+  document.getElementById('formPanel').scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearForm() {
+  ['fTitle','fDesc','fName','fDept'].forEach(id => document.getElementById(id).value = '');
+  priority = 'low';
+  document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('selected','low','medium','high'));
+  document.querySelector('.priority-btn.low').classList.add('selected','low');
+  document.getElementById('formStatus').textContent = '';
+}
+
+function handleSearch(v) {
+  searchQuery = v.toLowerCase();
+  renderTickets();
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderTickets();
+}
+
+function showToast(label, sub, category) {
+  const color = CAT_COLORS[category] || 'var(--text2)';
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<div class="toast-dot" style="background:${color}"></div>
+    <div class="toast-text">
+      <div class="toast-label">${label}</div>
+      <div class="toast-sub">${sub}</div>
+    </div>
+    <div style="cursor:pointer;color:var(--text3);font-size:16px" onclick="this.parentElement.remove()">×</div>`;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 300); }, 4000);
+}
+
+function resetApiKey() {
+  localStorage.removeItem('ticketai_groq_key');
+  showToast('Groq API key cleared', 'You will be prompted on next submission.', null);
+}
+
+function getApiKey() {
+  let key = localStorage.getItem('ticketai_groq_key') || '';
+  if (!key) {
+    key = prompt('Enter your Groq API key to enable AI classification:\nGet one free at https://console.groq.com\n(Saved locally in your browser)') || '';
+    if (key.trim()) localStorage.setItem('ticketai_groq_key', key.trim());
+  }
+  return key.trim();
+}
+
+async function classifyTicket(title, desc) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error('NO_KEY');
+
+  const systemPrompt = `You are a precise ticket classification engine for a company support system.
+Classify each support ticket into exactly one of these four categories:
+
+HR — people/employment: payroll, salary, leave requests, annual leave, sick leave, onboarding, offboarding, hiring, recruitment, performance reviews, benefits, medical aid, pension, employee relations, training, promotions, disciplinary issues, contracts, work from home policy.
+
+IT — technology: software bugs, hardware issues, laptop/computer problems, internet/wifi, VPN, passwords, account access, email setup, printer, phone, system errors, app crashes, new software requests, IT security, data backup.
+
+Finance — money/accounting: invoices, purchase orders, expense claims, reimbursements, budget approvals, vendor payments, supplier queries, credit notes, financial reports, petty cash, company cards.
+
+Operations — physical workplace/processes: office supplies, broken equipment (non-IT), facilities maintenance, meeting room bookings, parking, cleaning, building access, safety, compliance, logistics, courier, catering, vehicle fleet.
+
+You MUST respond with ONLY a raw JSON object — no markdown, no explanation, no extra text.
+Example: {"category":"HR","confidence":85,"reasoning":"Employee is requesting annual leave approval."}`;
+
+  const userPrompt = `Classify this ticket:
+Title: ${title}
+Description: ${desc}`;
+
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0,
+      max_tokens: 200,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userPrompt }
+      ]
+    })
+  });
+
+  if (r.status === 401) {
+    localStorage.removeItem('ticketai_groq_key');
+    throw new Error('INVALID_KEY');
+  }
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'API_ERROR ' + r.status);
+  }
+
+  const d = await r.json();
+  const txt = d.choices?.[0]?.message?.content?.trim();
+  if (!txt) throw new Error('EMPTY_RESPONSE');
+
+  let parsed;
+  try { parsed = JSON.parse(txt); } catch(e) {
+    const match = txt.match(/"category"\s*:\s*"(HR|IT|Finance|Operations)"/);
+    if (match) parsed = { category: match[1], confidence: 70, reasoning: 'Extracted from partial response.' };
+    else throw new Error('PARSE_ERROR: ' + txt.slice(0, 120));
+  }
+
+  const valid = ['HR', 'IT', 'Finance', 'Operations'];
+  if (!valid.includes(parsed.category)) throw new Error('INVALID_CATEGORY: ' + parsed.category);
+
+  return parsed;
+}
+
+async function submitTicket() {
+  const title = document.getElementById('fTitle').value.trim();
+  const desc  = document.getElementById('fDesc').value.trim();
+  const name  = document.getElementById('fName').value.trim() || 'Anonymous';
+  const dept  = document.getElementById('fDept').value.trim();
+
+  if (!title || !desc) {
+    showToast('Missing fields', 'Please fill in title and description.', null);
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  document.getElementById('btnIcon').textContent = '';
+  document.getElementById('btnText').innerHTML = '<span class="thinking-dots"><span></span><span></span><span></span></span> Classifying…';
+  document.getElementById('formStatus').innerHTML = '<span class="thinking-dots"><span></span><span></span><span></span></span>';
+
+  const id = 'TKT-' + (++counter);
+  const now = new Date();
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const ticket = { id, title, desc, name, dept, priority, time, category: null, confidence: 0, reasoning: '', ts: now };
+  tickets.unshift(ticket);
+  renderTickets();
+
+  try {
+    const res = await classifyTicket(title, desc);
+    ticket.category   = res.category;
+    ticket.confidence = res.confidence;
+    ticket.reasoning  = res.reasoning;
+    updateStats();
+    renderTickets();
+    updateDonut();
+    showToast('Classified as ' + res.category, title.slice(0, 48) + (title.length > 48 ? '…' : ''), res.category);
+  } catch(e) {
+    tickets.shift();
+    renderTickets();
+    const msg = e.message === 'NO_KEY'       ? 'No API key provided. Ticket not submitted.'
+              : e.message === 'INVALID_KEY'  ? 'Invalid API key. Please re-enter a valid key.'
+              : 'Classification failed: ' + e.message;
+    showToast('Error', msg, null);
+    console.error('Classification error:', e);
+  }
+
+  btn.disabled = false;
+  document.getElementById('btnIcon').textContent = '⚡';
+  document.getElementById('btnText').textContent = 'Classify & Submit';
+  document.getElementById('formStatus').textContent = '';
+  clearForm();
+}
+
+function updateStats() {
+  const cats = { HR:0, IT:0, Finance:0, Operations:0 };
+  tickets.forEach(t => { if (t.category) cats[t.category]++; });
+  document.getElementById('statHR').textContent  = cats.HR;
+  document.getElementById('statIT').textContent  = cats.IT;
+  document.getElementById('statFin').textContent = cats.Finance;
+  document.getElementById('statOps').textContent = cats.Operations;
+  document.getElementById('sideHR').textContent  = cats.HR;
+  document.getElementById('sideIT').textContent  = cats.IT;
+  document.getElementById('sideFin').textContent = cats.Finance;
+  document.getElementById('sideOps').textContent = cats.Operations;
+  document.getElementById('sideAllCount').textContent = tickets.length;
+  document.getElementById('liveCount').textContent    = tickets.length;
+  document.getElementById('tabAll').textContent  = tickets.length;
+  document.getElementById('tabHR').textContent   = cats.HR;
+  document.getElementById('tabIT').textContent   = cats.IT;
+  document.getElementById('tabFin').textContent  = cats.Finance;
+  document.getElementById('tabOps').textContent  = cats.Operations;
+  const total = tickets.filter(t => t.category).length;
+  Object.entries(cats).forEach(([k, v]) => {
+    const pct = total ? Math.round(v/total*100) : 0;
+    const key = { HR:'HR', IT:'IT', Finance:'Fin', Operations:'Ops' }[k];
+    const el = document.getElementById('delta' + key);
+    if (el) el.textContent = total ? pct + '% of total' : 'No tickets yet';
+  });
+  document.getElementById('queueMeta').textContent = tickets.length + ' ticket' + (tickets.length !== 1 ? 's' : '');
+}
+
+function updateDonut() {
+  const cats = { HR:0, IT:0, Finance:0, Operations:0 };
+  tickets.forEach(t => { if (t.category) cats[t.category]++; });
+  const total = Object.values(cats).reduce((a,b) => a+b, 0);
+  if (!total) { document.getElementById('donutWrap').style.display = 'none'; return; }
+  document.getElementById('donutWrap').style.display = 'flex';
+
+  const colors = { HR: '#ec4899', IT: '#3b82f6', Finance: '#10b981', Operations: '#f59e0b' };
+  const r = 24, cx = 32, cy = 32, circ = 2 * Math.PI * r;
+  let offset = 0;
+  let svgPaths = '';
+  const legendRows = [];
+
+  Object.entries(cats).forEach(([cat, val]) => {
+    if (!val) return;
+    const pct = val / total;
+    const dash = pct * circ;
+    svgPaths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[cat]}" stroke-width="8"
+      stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${-offset}" stroke-linecap="butt"/>`;
+    offset += dash;
+    legendRows.push(`<div class="legend-row"><div class="legend-dot" style="background:${colors[cat]}"></div>
+      <span class="legend-name">${cat}</span><span class="legend-val">${val}</span></div>`);
+  });
+
+  document.getElementById('donutSvg').innerHTML = svgPaths;
+  document.getElementById('donutLegend').innerHTML = legendRows.join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderTickets() {
+  const list = document.getElementById('ticketList');
+  let filtered = tickets;
+  if (activeFilter !== 'all') filtered = filtered.filter(t => t.category === activeFilter);
+  if (searchQuery) filtered = filtered.filter(t =>
+    t.title.toLowerCase().includes(searchQuery) || t.desc.toLowerCase().includes(searchQuery) ||
+    t.name.toLowerCase().includes(searchQuery) || (t.category||'').toLowerCase().includes(searchQuery)
+  );
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">◎</div>
+      <div class="empty-title">${tickets.length ? 'No matches' : 'No tickets yet'}</div>
+      <div class="empty-text">${tickets.length ? 'Try adjusting your filter or search.' : 'Submit a request using the form —<br/>the AI will classify it automatically.'}</div>
+    </div>`;
+    return;
+  }
+
+  const priorityArrow = { low: '↓', medium: '→', high: '↑' };
+  list.innerHTML = filtered.map((t, i) => {
+    const pending = !t.category;
+    const tag = pending ? `<span class="category-tag pending"><span class="thinking-dots"><span></span><span></span><span></span></span></span>`
+      : `<span class="category-tag ${t.category}">${t.category}</span>`;
+    const confidence = t.category ? `<div class="confidence-row">
+      <div class="confidence-bar-track"><div class="confidence-bar-fill ${t.category}" style="width:${t.confidence}%"></div></div>
+      <span class="confidence-pct">${t.confidence}%</span>
+    </div>` : '';
+    const reason = t.reasoning ? `<div class="reason-chip"><span class="reason-icon">→</span>${escHtml(t.reasoning)}</div>` : '';
+    const pip = t.priority ? `<span class="priority-pip ${t.priority}"></span>` : '';
+    return `<div class="ticket-item ${i === 0 ? 'new-ticket' : ''}">
+      <div class="ticket-item-top">
+        <div class="ticket-item-left">
+          <div class="ticket-item-title">${escHtml(t.title)}</div>
+          <div class="ticket-item-meta">
+            <span>${pip} ${escHtml(t.name)}</span>
+            ${t.dept ? `<span>· ${escHtml(t.dept)}</span>` : ''}
+            <span>· ${t.time}</span>
+            <span style="font-family:var(--mono);color:var(--text3)">${t.id}</span>
+          </div>
+        </div>
+        ${tag}
+      </div>
+      <div class="ticket-desc">${escHtml(t.desc)}</div>
+      ${confidence}${reason}
+    </div>`;
+  }).join('');
+}
+
+function exportTickets() {
+  if (!tickets.length) { showToast('Nothing to export', 'Submit some tickets first.', null); return; }
+  const rows = [['ID','Title','Category','Confidence','Priority','Submitter','Department','Time','Reasoning']];
+  tickets.forEach(t => rows.push([t.id, t.title, t.category||'pending', t.confidence, t.priority, t.name, t.dept, t.time, t.reasoning]));
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'tickets-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('Export ready', tickets.length + ' tickets exported as CSV', null);
+}
+
+updateStats();
+renderTickets();
+</script>
+</body>
+</html>
