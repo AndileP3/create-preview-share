@@ -637,13 +637,10 @@ function resetApiKey() {
   showToast('Groq API key cleared', 'You will be prompted on next submission.', null);
 }
 
+const GROQ_API_KEY = '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';
+
 function getApiKey() {
-  let key = localStorage.getItem('ticketai_groq_key') || '';
-  if (!key) {
-    key = prompt('Enter your Groq API key to enable AI classification:\nGet one free at https://console.groq.com\n(Saved locally in your browser)') || '';
-    if (key.trim()) localStorage.setItem('ticketai_groq_key', key.trim());
-  }
-  return key.trim();
+  return GROQ_API_KEY;
 }
 
 async function classifyTicket(title, desc) {
