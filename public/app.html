@@ -633,78 +633,26 @@ function showToast(label, sub, category) {
 }
 
 function resetApiKey() {
-  localStorage.removeItem('ticketai_groq_key');
-  showToast('Groq API key cleared', 'Reopen the app to reload the configured env key.', null);
-}
-
-const GROQ_API_KEY = new URLSearchParams(location.search).get('groq') || localStorage.getItem('ticketai_groq_key');
-
-function getApiKey() {
-  return GROQ_API_KEY;
+  showToast('Using Lovable AI', 'No API key needed — requests are proxied securely.', null);
 }
 
 async function classifyTicket(title, desc) {
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error('NO_KEY');
-
-  const systemPrompt = `You are a precise ticket classification engine for a company support system.
-Classify each support ticket into exactly one of these four categories:
-
-HR — people/employment: payroll, salary, leave requests, annual leave, sick leave, onboarding, offboarding, hiring, recruitment, performance reviews, benefits, medical aid, pension, employee relations, training, promotions, disciplinary issues, contracts, work from home policy.
-
-IT — technology: software bugs, hardware issues, laptop/computer problems, internet/wifi, VPN, passwords, account access, email setup, printer, phone, system errors, app crashes, new software requests, IT security, data backup.
-
-Finance — money/accounting: invoices, purchase orders, expense claims, reimbursements, budget approvals, vendor payments, supplier queries, credit notes, financial reports, petty cash, company cards.
-
-Operations — physical workplace/processes: office supplies, broken equipment (non-IT), facilities maintenance, meeting room bookings, parking, cleaning, building access, safety, compliance, logistics, courier, catering, vehicle fleet.
-
-You MUST respond with ONLY a raw JSON object — no markdown, no explanation, no extra text.
-Example: {"category":"HR","confidence":85,"reasoning":"Employee is requesting annual leave approval."}`;
-
-  const userPrompt = `Classify this ticket:
-Title: ${title}
-Description: ${desc}`;
-
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const r = await fetch('/api/classify', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + apiKey
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0,
-      max_tokens: 200,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user',   content: userPrompt }
-      ]
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, desc })
   });
 
-  if (r.status === 401) {
-    localStorage.removeItem('ticketai_groq_key');
-    throw new Error('INVALID_KEY');
-  }
   if (!r.ok) {
     const err = await r.json().catch(() => ({}));
-    throw new Error(err.error?.message || 'API_ERROR ' + r.status);
+    throw new Error(err.error || 'API_ERROR ' + r.status);
   }
 
-  const d = await r.json();
-  const txt = d.choices?.[0]?.message?.content?.trim();
-  if (!txt) throw new Error('EMPTY_RESPONSE');
-
-  let parsed;
-  try { parsed = JSON.parse(txt); } catch(e) {
-    const match = txt.match(/"category"\s*:\s*"(HR|IT|Finance|Operations)"/);
-    if (match) parsed = { category: match[1], confidence: 70, reasoning: 'Extracted from partial response.' };
-    else throw new Error('PARSE_ERROR: ' + txt.slice(0, 120));
-  }
-
+  const parsed = await r.json();
   const valid = ['HR', 'IT', 'Finance', 'Operations'];
-  if (!valid.includes(parsed.category)) throw new Error('INVALID_CATEGORY: ' + parsed.category);
+  if (!parsed || !valid.includes(parsed.category)) {
+    throw new Error('INVALID_CATEGORY: ' + (parsed && parsed.category));
+  }
 
   return parsed;
 }
