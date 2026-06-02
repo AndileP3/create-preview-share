@@ -634,10 +634,10 @@ function showToast(label, sub, category) {
 
 function resetApiKey() {
   localStorage.removeItem('ticketai_groq_key');
-  showToast('Groq API key cleared', 'You will be prompted on next submission.', null);
+  showToast('Groq API key cleared', 'Reopen the app to reload the configured env key.', null);
 }
 
-const GROQ_API_KEY = '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';
+const GROQ_API_KEY = new URLSearchParams(location.search).get('groq') || localStorage.getItem('ticketai_groq_key');
 
 function getApiKey() {
   return GROQ_API_KEY;
