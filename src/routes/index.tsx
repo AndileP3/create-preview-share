@@ -11,12 +11,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY ?? '';
-  const src = apiKey ? `/app.html?groq=${encodeURIComponent(apiKey)}` : '/app.html';
-
   return (
     <iframe
-      src={src}
+      src="/app.html"
       title="TicketAI"
       style={{
         position: "fixed",

@@ -4,15 +4,34 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TicketAI — Smart Classification Engine</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      background: #0a0d14;
+    }
+
+    iframe {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      border: 0;
+    }
+  </style>
+  <meta property="og:title" content="TicketAI — Smart Classification Engine">
+  <meta name="twitter:title" content="TicketAI — Smart Classification Engine">
+  <meta name="description" content="Build &amp; Publish Studio creates and publishes web applications based on provided designs and functionality.">
+  <meta property="og:description" content="Build &amp; Publish Studio creates and publishes web applications based on provided designs and functionality.">
+  <meta name="twitter:description" content="Build &amp; Publish Studio creates and publishes web applications based on provided designs and functionality.">
+  <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/36eb9679-b845-420e-b87a-a1096e3b798c/id-preview-422e5a80--dba40503-b310-4a2e-8db1-c005b8b34bc0.lovable.app-1780404955401.png">
+  <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/36eb9679-b845-420e-b87a-a1096e3b798c/id-preview-422e5a80--dba40503-b310-4a2e-8db1-c005b8b34bc0.lovable.app-1780404955401.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:type" content="website">
 </head>
 <body>
-  <script>
-    const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-    if (!GROQ_API_KEY) {
-      document.body.innerHTML = '<h1>Missing VITE_GROQ_API_KEY</h1><p>Set this variable in Netlify build environment and redeploy.</p>';
-      throw new Error('Missing VITE_GROQ_API_KEY');
-    }
-    window.location.replace('/app.html?groq=' + encodeURIComponent(GROQ_API_KEY));
-  </script>
+  <iframe src="/app.html" title="TicketAI"></iframe>
 </body>
 </html>

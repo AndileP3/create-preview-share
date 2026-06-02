@@ -1,6 +1,7 @@
 [build]
   command = "npm run build"
   publish = "dist/client"
+<<<<<<< HEAD
 
 [[redirects]]
   from = "/app.html"
@@ -13,3 +14,5 @@
   status = 200
   force = true
   
+=======
+>>>>>>> fcc1cd9735bf296f6676e62125245d632361475e
