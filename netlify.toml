@@ -3,7 +3,12 @@
   publish = "dist/client"
 
 [[redirects]]
-  from = "/*"
+  from = "/app.html"
   to = "/app.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
   force = true

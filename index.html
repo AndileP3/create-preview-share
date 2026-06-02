@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TicketAI — Smart Classification Engine</title>
+</head>
+<body>
+  <script>
+    const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+    if (!GROQ_API_KEY) {
+      document.body.innerHTML = '<h1>Missing VITE_GROQ_API_KEY</h1><p>Set this variable in Netlify build environment and redeploy.</p>';
+      throw new Error('Missing VITE_GROQ_API_KEY');
+    }
+    window.location.replace('/app.html?groq=' + encodeURIComponent(GROQ_API_KEY));
+  </script>
+</body>
+</html>
