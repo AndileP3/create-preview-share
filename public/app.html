@@ -648,19 +648,11 @@ async function classifyTicket(title, desc) {
     throw new Error(err.error || 'API_ERROR ' + r.status);
   }
 
-  const d = await r.json();
-  const txt = d.choices?.[0]?.message?.content?.trim();
-  if (!txt) throw new Error('EMPTY_RESPONSE');
-
-  let parsed;
-  try { parsed = JSON.parse(txt); } catch(e) {
-    const match = txt.match(/"category"\s*:\s*"(HR|IT|Finance|Operations)"/);
-    if (match) parsed = { category: match[1], confidence: 70, reasoning: 'Extracted from partial response.' };
-    else throw new Error('PARSE_ERROR: ' + txt.slice(0, 120));
-  }
-
+  const parsed = await r.json();
   const valid = ['HR', 'IT', 'Finance', 'Operations'];
-  if (!valid.includes(parsed.category)) throw new Error('INVALID_CATEGORY: ' + parsed.category);
+  if (!parsed || !valid.includes(parsed.category)) {
+    throw new Error('INVALID_CATEGORY: ' + (parsed && parsed.category));
+  }
 
   return parsed;
 }
