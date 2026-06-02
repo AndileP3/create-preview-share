@@ -637,7 +637,11 @@ function resetApiKey() {
   showToast('Groq API key cleared', 'Reopen the app to reload the configured env key.', null);
 }
 
-const GROQ_API_KEY = new URLSearchParams(location.search).get('groq') || localStorage.getItem('ticketai_groq_key');
+
+
+const GROQ_API_KEY =
+  new URLSearchParams(location.search).get('groq') ||
+  localStorage.getItem('ticketai_groq_key');
 
 function getApiKey() {
   return GROQ_API_KEY;
@@ -683,16 +687,30 @@ Description: ${desc}`;
     })
   });
 
+  const rawText = await r.text();
+  const text = rawText.trim();
+
   if (r.status === 401) {
     localStorage.removeItem('ticketai_groq_key');
     throw new Error('INVALID_KEY');
   }
+
   if (!r.ok) {
-    const err = await r.json().catch(() => ({}));
-    throw new Error(err.error?.message || 'API_ERROR ' + r.status);
+    let errMsg = 'API_ERROR ' + r.status;
+    try {
+      const json = JSON.parse(text);
+      errMsg = json.error?.message || json.message || errMsg;
+    } catch (parseErr) {
+      errMsg += ': ' + text.slice(0, 120);
+    }
+    throw new Error(errMsg);
   }
 
-  const d = await r.json();
+  if (!text || text.startsWith('<')) {
+    throw new Error('API returned non-JSON response: ' + text.slice(0, 120));
+  }
+
+  const d = JSON.parse(text);
   const txt = d.choices?.[0]?.message?.content?.trim();
   if (!txt) throw new Error('EMPTY_RESPONSE');
 
